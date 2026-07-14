@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Max - Fullscreen Digital Visor & Hybrid AI Assistant</title>
+    <!-- Google Fonts for Modern Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Style Sheet -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <!-- Premium background glowing spots -->
+    <div class="glass-bg"></div>
+    
+    <!-- Main Interactive Container (Dashboard View) -->
+    <div class="app-container" id="dashboard-container">
+        
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-area">
+                <button id="show-smiley-btn" class="show-smiley-btn" title="Open Digital Visor Screen">
+                    <i class="fa-solid fa-face-smile"></i>
+                </button>
+                <div class="avatar-glow">
+                    <i class="fa-solid fa-microchip logo-icon"></i>
+                </div>
+                <div class="title-meta">
+                    <h1>MAX</h1>
+                    <span class="sub-title">Hybrid AI Assistant</span>
+                </div>
+            </div>
+            
+            <div class="header-status">
+                <div id="conn-badge" class="badge online">
+                    <span class="pulse-dot"></span>
+                    <span id="conn-text">Checking...</span>
+                </div>
+                <div id="latency-badge" class="badge latency">
+                    <i class="fa-solid fa-gauge-high"></i>
+                    <span id="latency-text">-- ms</span>
+                </div>
+                <button id="settings-btn" class="icon-btn" title="Settings Menu">
+                    <i class="fa-solid fa-sliders"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Chat History -->
+        <main class="chat-area" id="chat-history">
+            <div class="message system-msg">
+                <div class="msg-avatar"><i class="fa-solid fa-robot"></i></div>
+                <div class="msg-content">
+                    <h3>System Online. Welcome, I am Max.</h3>
+                    <p>I am a connectivity-aware hybrid voice assistant designed for standard computers and Raspberry Pi platforms. I dynamically switch between cloud API intelligence (Gemini) and localized quantized offline engines (Qwen 2.5) if network speeds degrade.</p>
+                    <div class="welcome-chips">
+                        <span class="chip"><i class="fa-solid fa-play"></i> Say "Start" or "Max" to activate visor</span>
+                        <span class="chip"><i class="fa-solid fa-stop"></i> Say "Stop" or "Exit" to close session</span>
+                        <span class="chip"><i class="fa-solid fa-language"></i> Supports English and Tamil</span>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Voice Visualizer Box (Fills during voice activity) -->
+        <div id="voice-visualizer-container" class="visualizer-container">
+            <canvas id="visualizer-canvas"></canvas>
+            <div class="voice-status-text" id="voice-status-label">Voice Engine Idle</div>
+        </div>
+
+        <!-- Controls Footer -->
+        <footer class="app-controls">
+            <div class="modes-selector">
+                <!-- Connectivity Force Selection -->
+                <div class="segmented-control">
+                    <input type="radio" name="force_mode" id="mode-auto" value="auto" checked>
+                    <label for="mode-auto">Auto Select</label>
+                    
+                    <input type="radio" name="force_mode" id="mode-online" value="online">
+                    <label for="mode-online">Force Online</label>
+                    
+                    <input type="radio" name="force_mode" id="mode-offline" value="offline">
+                    <label for="mode-offline">Force Offline</label>
+                </div>
+
+                <!-- Language Force Selection -->
+                <div class="segmented-control">
+                    <input type="radio" name="force_lang" id="lang-auto" value="auto" checked>
+                    <label for="lang-auto">Auto Language</label>
+                    
+                    <input type="radio" name="force_lang" id="lang-en" value="en">
+                    <label for="lang-en">English</label>
+                    
+                    <input type="radio" name="force_lang" id="lang-ta" value="ta">
+                    <label for="lang-ta">Tamil</label>
+                </div>
+            </div>
+
+            <!-- Voice Trigger Row -->
+            <div class="input-row">
+                <div class="input-wrapper" id="text-input-wrapper">
+                    <input type="text" id="text-prompt" placeholder="Ask Max something..." autocomplete="off">
+                    <button id="send-btn" class="send-prompt-btn" title="Send message">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </div>
+
+                <button id="voice-record-btn" class="voice-record-btn" title="Tap to Speak (Wake Word alternative)">
+                    <i class="fa-solid fa-microphone"></i>
+                </button>
+            </div>
+
+            <div class="mode-info">
+                <span id="interaction-mode-indicator"><i class="fa-solid fa-microphone-slash"></i> Passive Listening</span>
+                <span class="separator">•</span>
+                <span id="model-source-indicator"><i class="fa-solid fa-server"></i> Detecting local engine status...</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Configuration Settings Sidebar Drawer -->
+    <div id="settings-drawer" class="drawer hidden">
+        <div class="drawer-backdrop"></div>
+        <div class="drawer-content">
+            <div class="drawer-header">
+                <h2>Assistant Settings</h2>
+                <button id="close-settings-btn" class="icon-btn" title="Close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="drawer-body">
+                <!-- Gemini API Key Section -->
+                <div class="settings-group">
+                    <h3><i class="fa-solid fa-cloud"></i> Online Engine (Cloud)</h3>
+                    <label for="gemini-key-input">Gemini API Key</label>
+                    <div class="password-wrapper">
+                        <input type="password" id="gemini-key-input" placeholder="AIzaSy...">
+                        <button id="toggle-key-visibility" class="icon-btn" title="Toggle visibility"><i class="fa-solid fa-eye"></i></button>
+                    </div>
+                    <p class="settings-hint">Your API Key is stored safely in your local browser storage (localStorage).</p>
+                </div>
+
+                <!-- Offline Local Engine Section -->
+                <div class="settings-group">
+                    <h3><i class="fa-solid fa-hdd"></i> Offline Engine (Raspberry Pi)</h3>
+                    <div class="status-list">
+                        <div class="status-item">
+                            <span>Llama-Server Binary:</span>
+                            <span id="status-bin" class="status-label checking"><i class="fa-solid fa-spinner fa-spin"></i> Checking</span>
+                        </div>
+                        <div class="status-item">
+                            <span>Quantized GGUF Model:</span>
+                            <span id="status-model" class="status-label checking"><i class="fa-solid fa-spinner fa-spin"></i> Checking</span>
+                        </div>
+                        <div class="status-item">
+                            <span>Local Process:</span>
+                            <span id="status-process" class="status-label checking"><i class="fa-solid fa-spinner fa-spin"></i> Checking</span>
+                        </div>
+                    </div>
+                    <div id="download-prompt" class="download-box hidden">
+                        <p>Offline model files are missing from directory. Please run the setup scripts (`setup.py`) or click below to check status again.</p>
+                        <button id="retry-status-btn" class="primary-btn"><i class="fa-solid fa-sync"></i> Refresh Status</button>
+                    </div>
+                </div>
+
+                <!-- Speech Options -->
+                <div class="settings-group">
+                    <h3><i class="fa-solid fa-volume-high"></i> Voice Synthesis Settings</h3>
+                    <label for="voice-language">Speech Recognition Language</label>
+                    <select id="voice-language">
+                        <option value="en-US">English (United States)</option>
+                        <option value="ta-IN">Tamil (India)</option>
+                    </select>
+                    
+                    <label for="voice-pitch">Pitch (0.5 - 2.0)</label>
+                    <input type="range" id="voice-pitch" min="0.5" max="2.0" step="0.1" value="1.0">
+                    
+                    <label for="voice-rate">Speed Rate (0.5 - 2.0)</label>
+                    <input type="range" id="voice-rate" min="0.5" max="2.0" step="0.1" value="1.0">
+                    
+                    <label for="voice-gender">Select Synthesis Character</label>
+                    <select id="voice-gender">
+                        <!-- Populated by available web speech voices dynamically -->
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fullscreen Digital Visor Screen -->
+    <div id="smiley-overlay" class="smiley-overlay">
+        <!-- Dashboard Toggle Button in Corner -->
+        <button id="toggle-dashboard-btn" class="toggle-dashboard-btn" title="Exit Fullscreen Visor">
+            <i class="fa-solid fa-table-columns"></i>
+        </button>
+
+        <!-- Digital Scanlines -->
+        <div class="visor-grid"></div>
+
+        <!-- Floating responsive face elements -->
+        <div class="robot-container">
+            <div class="robot-head expr-idle" id="smiley-face">
+                <div class="robot-visor">
+                    
+                    <!-- Eye row -->
+                    <div class="eyes-container">
+                        <div class="eye left-eye"></div>
+                        <div class="eye right-eye"></div>
+                    </div>
+                    
+                    <!-- Blush row -->
+                    <div class="blushes-container">
+                        <div class="blush left-blush"></div>
+                        <div class="blush right-blush"></div>
+                    </div>
+                    
+                    <!-- Mouth row -->
+                    <div class="mouth-container">
+                        <div class="mouth" id="smiley-mouth"></div>
+                    </div>
+                    
+                </div>
+            </div>
+            
+            <!-- Dynamic Visor Status Text -->
+            <div class="smiley-status-text" id="smiley-status-label">Say "Start" or "Max" to activate</div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/static/app.js"></script>
+</body>
+</html>
